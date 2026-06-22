@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\Cerbi.Demo.Governance\Cerbi.Demo.Governance.csproj" />
+  </ItemGroup>
+</Project>
