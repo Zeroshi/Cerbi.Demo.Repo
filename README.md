@@ -1,102 +1,55 @@
 # cerbi-undeniable-demo
 
-A small .NET 8 repository that demonstrates one thing: unsafe application log fields are stopped in-process before they can be exported.
+A .NET 9 demo showing Cerbi source logging governance: bad code logs sensitive values, Cerbi Scanner finds them, the pipeline fails, the developer fixes the log shape, and the pipeline passes. Optional runtime governance evaluates and redacts the same pattern locally with no remote control-plane dependency in the hot path.
 
-This is intentionally local and boring. There is no Azure, Docker, Kubernetes, queue, database, Splunk, Datadog, or paid service. The demo uses a small in-repo governance runtime so a reviewer can inspect every decision. In a real Cerbi integration, `src/Cerbi.Demo.Governance` is the seam where the Cerbi runtime package would replace the local demo engine.
+## Required demo files
+
+| Path | Purpose |
+| --- | --- |
+| `src/UnsafeApi` | Intentionally bad API that logs email, bearer token, SSN-like value, and raw customer ID. |
+| `src/SafeApi` | Fixed API that logs reviewed fields and demonstrates local runtime redaction. |
+| `cerbi-policy.yml` | Shared governance policy used by scanner examples and runtime demo. |
+| `.azure-pipelines/cerbi-scan.yml` | Azure Pipelines CI proof. |
+| `.github/workflows/cerbi-scan.yml` | GitHub Actions CI proof. |
+| `examples/findings.json` | Example Cerbi Scanner findings. |
+| `examples/findings.sarif` | Example SARIF output for code scanning systems. |
+| `examples/build-summary.md` | Before/fail/fix/pass narrative. |
 
 ## Quick start
 
 ```bash
-dotnet test
+dotnet test cerbi-undeniable-demo.sln
 ```
 
-Expected result:
+> This repo has no production Cerbi service dependency. The demo governance runtime loads cached local rules and evaluates in process.
 
-```text
-Passed!  - Failed: 0, Passed: 3, Skipped: 0
-```
+## Demo flow
 
-## What the evidence shows
+1. **Bad code logs sensitive data**: `src/UnsafeApi/Program.cs` logs an email, token, SSN-like value, and customer ID.
+2. **Cerbi Scanner finds it**: sample outputs are in `examples/findings.json` and `examples/findings.sarif`.
+3. **Pipeline fails**: CI scanner steps intentionally fail when blocked patterns are present in `src/UnsafeApi`.
+4. **Developer fixes it**: `src/SafeApi/Program.cs` logs `customerRef`, `tokenPresent`, `ssnPresent`, and `failureCode` instead.
+5. **Pipeline passes**: CI verifies the fixed API has no blocked source logging patterns.
+6. **Optional runtime governance**: `POST /runtime/redact` evaluates unsafe candidate data locally and returns redacted values.
 
-Every unsafe finding includes the items a security reviewer needs:
+## Run the APIs
 
-| Evidence item | Example |
-| --- | --- |
-| Sensitive field | `cardNumber` |
-| Why it is risky | `Payment account numbers in logs increase PCI scope...` |
-| Rule that caught it | `PCI.PAN.VALUE` |
-| Outcome | `blocked` |
-| Developer action | `Remove cardNumber from the log and keep only cardLast4...` |
-
-## What to inspect
-
-| Area | File | Why it matters |
-| --- | --- | --- |
-| Unsafe log | `src/Cerbi.Demo.Api/PaymentLogExamples.cs` | Shows the exact fields a developer should not log. |
-| Safe log | `src/Cerbi.Demo.Api/PaymentLogExamples.cs` | Shows the corrected structured replacement. |
-| Policy | `policy/governance-profile.json` | Defines the rule, risk, outcome, and developer action. |
-| Runtime | `src/Cerbi.Demo.Governance/CerbiGovernanceEngine.cs` | Evaluates log fields locally with no network call in the hot path. |
-| Tests | `tests/Cerbi.Demo.Tests/GovernanceTests.cs` | Proves block, pass, and evidence behavior. |
-
-## Before: unsafe log shape
-
-The unsafe example attempts to log:
-
-```text
-customerEmail  = demo.customer@example.invalid
-cardNumber     = 4111 1111 1111 1111
-authorization  = Bearer demo-token-not-real
-debugPayload   = { ...free-form request body... }
-```
-
-The policy blocks the event. It is not added to the accepted log sink.
-
-## After: safe log shape
-
-The corrected example logs stable, reviewed fields:
-
-```text
-customerRef            = cust_demo_001
-paymentInstrumentType  = card
-cardLast4              = 1111
-tokenPresent           = true
-failureCode            = issuer_declined
-```
-
-The policy accepts the event.
-
-## Optional API run
-
-Start the API:
+Unsafe sample:
 
 ```bash
-dotnet run --project src/Cerbi.Demo.Api
+dotnet run --project src/UnsafeApi
 ```
 
-Fetch a single before/after evidence payload:
+Safe sample with local runtime governance:
 
 ```bash
-curl -s http://localhost:5000/demo/evidence
+dotnet run --project src/SafeApi
+curl -s -X POST http://localhost:5000/runtime/redact
 ```
-
-The unsafe section includes `fieldName`, `risk`, `ruleId`, `outcome`, and `developerAction` for each finding. The safe section has `outcome: allowed` and no violations.
-
-Call each path separately:
-
-```bash
-curl -i -X POST http://localhost:5000/demo/unsafe
-curl -i -X POST http://localhost:5000/demo/safe
-```
-
-Expected behavior:
-
-- `/demo/unsafe` returns `400 Bad Request` and rule evidence.
-- `/demo/safe` returns `200 OK` and `isAllowed: true`.
-- `/demo/evidence` returns both attempts in one payload.
 
 ## What this does not claim
 
-- It is not a production Cerbi package.
+- It is not a production scanner implementation.
 - It is not an observability pipeline.
-- It does not require an external control plane at runtime.
-- It does not contain real personal data, secrets, connection strings, or API keys.
+- It does not send application logs through a public control-plane service.
+- It does not contain real personal data, credentials, or customer identifiers.

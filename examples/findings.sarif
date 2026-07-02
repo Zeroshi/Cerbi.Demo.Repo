@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": { "driver": { "name": "Cerbi Scanner", "rules": [
+        { "id": "PII.EMAIL.VALUE", "shortDescription": { "text": "Email logged" } },
+        { "id": "AUTH.BEARER_TOKEN.FIELD_OR_VALUE", "shortDescription": { "text": "Bearer token logged" } },
+        { "id": "PII.SSN.VALUE", "shortDescription": { "text": "SSN-like value logged" } },
+        { "id": "PII.CUSTOMER_ID.FIELD", "shortDescription": { "text": "Raw customer ID logged" } }
+      ] } },
+      "results": [
+        { "ruleId": "PII.EMAIL.VALUE", "level": "error", "message": { "text": "Email-like value is logged." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/UnsafeApi/Program.cs" }, "region": { "startLine": 12 } } }] },
+        { "ruleId": "AUTH.BEARER_TOKEN.FIELD_OR_VALUE", "level": "error", "message": { "text": "Bearer token-like value is logged." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/UnsafeApi/Program.cs" }, "region": { "startLine": 13 } } }] },
+        { "ruleId": "PII.SSN.VALUE", "level": "error", "message": { "text": "SSN-like value is logged." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/UnsafeApi/Program.cs" }, "region": { "startLine": 14 } } }] },
+        { "ruleId": "PII.CUSTOMER_ID.FIELD", "level": "warning", "message": { "text": "Raw customer ID is logged." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/UnsafeApi/Program.cs" }, "region": { "startLine": 15 } } }] }
+      ]
+    }
+  ]
+}

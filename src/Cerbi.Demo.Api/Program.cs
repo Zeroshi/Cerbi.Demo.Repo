@@ -3,7 +3,7 @@ using Cerbi.Demo.Governance;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var policyPath = Path.Combine(builder.Environment.ContentRootPath, "..", "..", "policy", "governance-profile.json");
+var policyPath = Path.Combine(builder.Environment.ContentRootPath, "..", "..", "cerbi-policy.yml");
 var policy = GovernancePolicy.Load(Path.GetFullPath(policyPath));
 builder.Services.AddSingleton(new CerbiGovernanceEngine(policy));
 builder.Services.AddScoped<PaymentLogExamples>();

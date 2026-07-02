@@ -1,0 +1,12 @@
+{
+  "tool": "Cerbi Scanner",
+  "policy": "cerbi-demo-source-log-governance",
+  "outcome": "failed",
+  "sourceRoot": "src/UnsafeApi",
+  "findings": [
+    { "ruleId": "PII.EMAIL.VALUE", "severity": "high", "file": "src/UnsafeApi/Program.cs", "line": 12, "field": "Email", "message": "Email-like value is logged." },
+    { "ruleId": "AUTH.BEARER_TOKEN.FIELD_OR_VALUE", "severity": "critical", "file": "src/UnsafeApi/Program.cs", "line": 13, "field": "Token", "message": "Bearer token-like value is logged." },
+    { "ruleId": "PII.SSN.VALUE", "severity": "critical", "file": "src/UnsafeApi/Program.cs", "line": 14, "field": "SsnLastKnownValue", "message": "SSN-like value is logged." },
+    { "ruleId": "PII.CUSTOMER_ID.FIELD", "severity": "medium", "file": "src/UnsafeApi/Program.cs", "line": 15, "field": "CustomerId", "message": "Raw customer ID is logged." }
+  ]
+}

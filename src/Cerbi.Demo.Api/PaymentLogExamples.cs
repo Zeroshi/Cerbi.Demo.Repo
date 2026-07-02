@@ -14,16 +14,15 @@ public sealed class PaymentLogExamples
 
     public GovernanceResult TryUnsafePaymentLog() => _logger.Write(LogEvent.Create(
         "PaymentAttemptFailed.Unsafe",
-        ("customerEmail", "demo.customer@example.invalid"),
-        ("cardNumber", "4111 1111 1111 1111"),
-        ("authorization", "Bearer demo-token-not-real"),
-        ("debugPayload", "{ \"note\": \"unreviewed free-form request body\" }")));
+        ("customerEmail", "alex.customer@example.invalid"),
+        ("token", "Bearer demo-token-not-real"),
+        ("ssnLastKnownValue", "123-45-6789"),
+        ("customerId", "customerId-78441")));
 
     public GovernanceResult TrySafePaymentLog() => _logger.Write(LogEvent.Create(
         "PaymentAttemptFailed.Safe",
-        ("customerRef", "cust_demo_001"),
-        ("paymentInstrumentType", "card"),
-        ("cardLast4", "1111"),
+        ("customerRef", "custref_demo_78441"),
         ("tokenPresent", true),
+        ("ssnPresent", true),
         ("failureCode", "issuer_declined")));
 }

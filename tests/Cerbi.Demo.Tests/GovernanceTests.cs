@@ -13,7 +13,7 @@ public sealed class GovernanceTests
             var directory = new DirectoryInfo(AppContext.BaseDirectory);
             while (directory is not null)
             {
-                var candidate = Path.Combine(directory.FullName, "policy", "governance-profile.json");
+                var candidate = Path.Combine(directory.FullName, "cerbi-policy.yml");
                 if (File.Exists(candidate))
                 {
                     return candidate;
@@ -22,7 +22,7 @@ public sealed class GovernanceTests
                 directory = directory.Parent;
             }
 
-            throw new FileNotFoundException("Could not find policy/governance-profile.json from the test output directory.");
+            throw new FileNotFoundException("Could not find cerbi-policy.yml from the test output directory.");
         }
     }
 
@@ -37,9 +37,9 @@ public sealed class GovernanceTests
         Assert.Empty(examples.AcceptedEvents);
         Assert.Equal(4, result.Violations.Count);
         Assert.Contains(result.Violations, violation => violation.RuleId == "PII.EMAIL.VALUE");
-        Assert.Contains(result.Violations, violation => violation.RuleId == "PCI.PAN.VALUE");
         Assert.Contains(result.Violations, violation => violation.RuleId == "AUTH.BEARER_TOKEN.FIELD_OR_VALUE");
-        Assert.Contains(result.Violations, violation => violation.RuleId == "DEBUG.RAW_PAYLOAD.FIELD");
+        Assert.Contains(result.Violations, violation => violation.RuleId == "PII.SSN.VALUE");
+        Assert.Contains(result.Violations, violation => violation.RuleId == "PII.CUSTOMER_ID.FIELD");
         Assert.All(result.Violations, violation => Assert.Equal("blocked", violation.Outcome));
     }
 
@@ -62,16 +62,16 @@ public sealed class GovernanceTests
 
         var result = examples.TryUnsafePaymentLog();
 
-        var panViolation = Assert.Single(result.Violations, violation => violation.RuleId == "PCI.PAN.VALUE");
-        Assert.Equal("payment_account_number", panViolation.DataClass);
-        Assert.Equal("critical", panViolation.Severity);
-        Assert.Equal("block", panViolation.Action);
-        Assert.Equal("blocked", panViolation.Outcome);
-        Assert.Equal("cardNumber", panViolation.FieldName);
-        Assert.Contains("PAN-like", panViolation.Evidence);
-        Assert.Contains("PCI scope", panViolation.Risk);
-        Assert.Contains("cardLast4", panViolation.Recommendation);
-        Assert.Contains("Remove cardNumber", panViolation.DeveloperAction);
+        var ssnViolation = Assert.Single(result.Violations, violation => violation.RuleId == "PII.SSN.VALUE");
+        Assert.Equal("national_identifier", ssnViolation.DataClass);
+        Assert.Equal("critical", ssnViolation.Severity);
+        Assert.Equal("block", ssnViolation.Action);
+        Assert.Equal("blocked", ssnViolation.Outcome);
+        Assert.Equal("ssnLastKnownValue", ssnViolation.FieldName);
+        Assert.Contains("SSN-like", ssnViolation.Evidence);
+        Assert.Contains("privacy exposure", ssnViolation.Risk);
+        Assert.Contains("ssnPresent", ssnViolation.Recommendation);
+        Assert.Contains("Remove ssnLastKnownValue", ssnViolation.DeveloperAction);
     }
 
     private static PaymentLogExamples CreateExamples()
