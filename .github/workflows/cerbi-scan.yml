@@ -1,0 +1,35 @@
+name: Cerbi Scanner
+
+on:
+  push:
+    branches: [main, 'demo/**']
+  pull_request:
+
+jobs:
+  cerbi-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Build and test demo
+        run: dotnet test cerbi-undeniable-demo.sln --configuration Release
+      - name: Cerbi Scanner source governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Cerbi Scanner: verifying unsafe sample fails"
+          if rg -n --pcre2 "(?i)([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|Bearer\s+[A-Z0-9._~+\/-]+|\b\d{3}-\d{2}-\d{4}\b|customerId)" src/UnsafeApi; then
+            echo "Cerbi Scanner blocked unsafe logging sample as expected."
+          else
+            echo "Unsafe sample did not produce expected findings."
+            exit 1
+          fi
+
+          echo "Cerbi Scanner: verifying fixed sample passes"
+          if rg -n --pcre2 "(?i)([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|Bearer\s+[A-Z0-9._~+\/-]+|\b\d{3}-\d{2}-\d{4}\b|customerId)" src/SafeApi; then
+            echo "Safe sample still contains blocked logging patterns."
+            exit 1
+          fi
+          echo "Cerbi Scanner passed fixed logging sample."
